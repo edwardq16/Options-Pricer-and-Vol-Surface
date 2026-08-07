@@ -11,6 +11,7 @@ An interactive Streamlit application for pricing European options, visualising t
 - **A volatility smile**, fitted per expiry using an **SVI (Stochastic Volatility Inspired) parametrisation**.
 - **A 3D implied volatility surface** (strike × time-to-expiry × IV), built by repeating the smile-fitting pipeline across multiple expiries.
 - **A fully interactive dashboard**: strike, expiry, and option type are chosen via sliders/radio buttons; volatility and the risk-free rate are derived from the fitted smile and a live 13-week Treasury yield (`^IRX`) respectively.
+- **Multi-option strategies payoff graphs**: `payoff_diagram_main.py` contains a small matplotlib UI which allows you to visualise the long and short payoffs of several multi-option strategies, including straddles, collars and bearish and bullish spreads.
 
 ## Architecture
 

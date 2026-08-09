@@ -1,9 +1,7 @@
 import numpy as np
-from scipy.interpolate import CubicSpline
 from scipy.optimize import curve_fit
 from datetime import date
 import pandas as pd
-import matplotlib.pyplot as plt
 import streamlit as st
 from market_data import get_option_chain, get_expiries, solve_iv_smile, get_rfr
 from black_scholes import vega
@@ -22,8 +20,6 @@ def fit_smile(strikes, ivs, S, T, r, q=0.0):
     resid = iv_fit - ivs
     rmse = np.sqrt(np.mean(resid ** 2)) * 100
     wrmse = np.sqrt(np.sum(vegas * resid ** 2) / np.sum(vegas)) * 100
-    print(f"T={T:.3f}  n={len(k)}  rmse={rmse:.2f}  wrmse={wrmse:.2f}  vol pts")
-    print(vegas.min(), vegas.max(), vegas.min()/vegas.max())
     def smile(K):
         k = np.log(K/S)
         a, b, rho, m, sigma = params

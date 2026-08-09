@@ -32,11 +32,15 @@ else:
     index = 1
 
 vol = smile(K)
-mkt_price = clean_mid_data[K]
-if K > S:
+otm_mid = clean_mid_data[K]
+parity = S * np.exp(-q * T) - K * np.exp(-r * T)
+
+if index == 0:
     model_price = bs_euro_call(S, K, T, r, vol, q)
+    mkt_price = otm_mid if K > S else otm_mid + parity
 else:
     model_price = bs_euro_put(S, K, T, r, vol, q)
+    mkt_price = otm_mid if K < S else otm_mid - parity
 diff = model_price - mkt_price
 c1, c2 = st.columns(2)
 c1.metric("Market price" , f"${mkt_price:.2f}")
@@ -67,15 +71,15 @@ def add_panel(gs_slice, data, title):
 
 ax_price = add_panel(gs[0:2, 1:3], price_vals, "Price")
 ax_delta = add_panel(gs[0, 3], delta_vals, "Delta")
-delta_atm = delta(K, K, T, r, vol)[index]
+delta_atm = delta(K, K, T, r, vol, q)[index]
 ax_gamma = add_panel(gs[1, 3], gamma_vals, "Gamma")
-gamma_atm = gamma(K, K, T, r, vol)
+gamma_atm = gamma(K, K, T, r, vol, q)
 ax_theta = add_panel(gs[2, 0], theta_vals, "Theta")
-theta_atm = theta(K, K, T, r, vol)[index]
+theta_atm = theta(K, K, T, r, vol, q)[index]
 ax_vega = add_panel(gs[2, 1], vega_vals, "Vega")
-vega_atm = vega(K, K, T, r, vol)
+vega_atm = vega(K, K, T, r, vol, q)
 ax_rho = add_panel(gs[2, 2], rho_vals, "Rho")
-rho_atm = rho(K, K, T, r, vol)[index]
+rho_atm = rho(K, K, T, r, vol, q)[index]
 ax_payoff = add_panel(gs[2, 3], payoff_vals, "Payoff")
 
 ax_key = fig.add_subplot(gs[0:2, 0])

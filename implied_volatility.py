@@ -1,9 +1,6 @@
 from black_scholes import bs_euro_call, bs_euro_put, vega
 import numpy as np
 
-from black_scholes import bs_euro_call, bs_euro_put, vega
-import numpy as np
-
 def implied_vol(S, K, T, r, vol_0, price_mkt, flag, tol=1e-6, max_iter=500, vfloor=1e-6, q=0.0):
     if flag == "call":
         pricer = bs_euro_call

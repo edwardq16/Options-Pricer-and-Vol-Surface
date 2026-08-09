@@ -26,11 +26,11 @@ def get_rfr():
 @st.cache_data
 def get_div_yield(symbol):
     ticker = yf.Ticker(symbol)
-    q = (ticker.info.get("dividendYield", 0.0))/100
+    q = ticker.info.get("dividendYield", 0.0)
     if q == None:
         return 0.0
     else:
-        return q
+        return q/100
 
 def clean_chain(df, max_rel_spread=0.25):
     df = df[(df["bid"] > 0) & (df["ask"] > 0) & (df["ask"] >= df["bid"])]

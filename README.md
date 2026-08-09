@@ -38,7 +38,8 @@ The project is split into modules by responsibility, with `app.py` handling only
 
 - **European pricing applied to American options.** Single-name US equity options are American, so put-call parity is strictly an inequality rather than an equality. The effect is small for short-dated near-the-money contracts, which is where the surface is most reliable.
 - **A continuous dividend yield.** Real dividends are discrete cash payments on specific ex-dividend dates, so a single annualised `q` is wrong for any given expiry except by coincidence.
-- 
+- **The volatility surface is slow and network-fragile.** Building it makes around ten sequential yfinance requests, so it dominates load time and any single request timing out will fail the whole surface.
+
 ## Future work
 
 - **Dupire local volatility calibration** — using the fitted price surface (via `∂C/∂T` and `∂²C/∂K²`) to back out a local volatility function `σ_loc(S,t)` consistent with all quoted vanillas.

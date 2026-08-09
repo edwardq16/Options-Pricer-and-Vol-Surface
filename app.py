@@ -5,53 +5,55 @@ from matplotlib.gridspec import GridSpec
 from datetime import date
 from black_scholes import bs_euro_call, bs_euro_put, delta, gamma, vega, theta, rho
 from vol_surface import fit_smile, build_vol_surface
-from market_data import get_option_chain, get_expiries, get_rfr, solve_iv_smile
+from market_data import get_option_chain, get_expiries, get_rfr, get_div_yield, solve_iv_smile
 
 st.title("Options Pricer & Greeks Visualiser")
 
 symbol = st.sidebar.radio("Underlyings", ["AAPL", "MSFT", "GOOGL", "AMZN"])
 r = get_rfr()
+q = get_div_yield(symbol)
 expiries = get_expiries(symbol)
-expiries = [e for e in expiries if (date.fromisoformat(e) - date.today()).days > 0]
-expiry = st.sidebar.select_slider("Expiry date", options=expiries)
+expiries = [e for e in expiries if (date.fromisoformat(e) - date.today()).days > 7]
+expiry = st.sidebar.select_slider("Expiry date", options=expiries, value=expiries[min(4, len(expiries) - 1)])
 
 option_type = st.sidebar.radio("Option type", ["Call", "Put"])
 calls, puts, S, T = get_option_chain(symbol, expiry)
-clean_call_data, clean_put_data = solve_iv_smile(calls, puts, S, T, r)
+clean_iv_data, clean_mid_data = solve_iv_smile(calls, puts, S, T, r, q=q)
+if len(clean_iv_data) < 8:
+    st.error("Not enough liquid strikes to build a smile for this selection.")
+    st.stop()
 
+smile = fit_smile(np.array(list(clean_iv_data.keys())), np.array(list(clean_iv_data.values())), S, T, r, q)
+strikes_available = sorted(clean_iv_data.keys())
+K = st.sidebar.select_slider("K", options=strikes_available, value=min(strikes_available, key=lambda x: abs(x - S)))
 if option_type == "Call":
-    if len(clean_call_data) < 2:
-        st.error("Not enough liquid strikes to build a call smile for this selection.")
-        st.stop()
-    else:
-        call_smile = fit_smile(np.array(list(clean_call_data.keys())), np.array(list(clean_call_data.values())), S, T)
-    K = st.sidebar.slider("K", min(clean_call_data.keys()), max(clean_call_data.keys()), float(S))
     index = 0
 else:
-    if len(clean_put_data) < 2:
-        st.error("Not enough liquid strikes to build a put smile for this selection.")
-        st.stop()
-    else:
-        put_smile = fit_smile(np.array(list(clean_put_data.keys())), np.array(list(clean_put_data.values())), S, T)
-    K = st.sidebar.slider("K", min(clean_put_data.keys()), max(clean_put_data.keys()), float(S))
     index = 1
 
-vol = call_smile(K) if option_type == "Call" else put_smile(K)
-S_range = np.linspace(0.5 * S, 1.5 * S, 200)
-price_vals, delta_vals, gamma_vals, vega_vals, theta_vals, rho_vals, payoff_vals = [], [], [], [], [], [], []
+vol = smile(K)
+mkt_price = clean_mid_data[K]
+if K > S:
+    model_price = bs_euro_call(S, K, T, r, vol, q)
+else:
+    model_price = bs_euro_put(S, K, T, r, vol, q)
+diff = model_price - mkt_price
+c1, c2 = st.columns(2)
+c1.metric("Market price" , f"${mkt_price:.2f}")
+c2.metric("Model price", f"${model_price:.2f}", delta=f"{diff:+.2f}", delta_color="off")
 
-for S in S_range:
-    if index == 0:
-        price_vals.append(bs_euro_call(S, K, T, r, vol))
-        payoff_vals.append(np.maximum(S - K, 0))
-    else:
-        price_vals.append(bs_euro_put(S, K, T, r, vol))
-        payoff_vals.append(np.maximum(K - S, 0))
-    delta_vals.append(delta(S, K, T, r, vol)[index])
-    gamma_vals.append(gamma(S, K, T, r, vol))
-    vega_vals.append(vega(S, K, T, r, vol))
-    theta_vals.append(theta(S, K, T, r, vol)[index])
-    rho_vals.append(rho(S, K, T, r, vol)[index])
+S_range = np.linspace(0.5 * S, 1.5 * S, 200)
+if index == 0:
+    price_vals = bs_euro_call(S_range, K, T, r, vol, q)
+    payoff_vals = np.maximum(S_range - K, 0)
+else:
+    price_vals = bs_euro_put(S_range, K, T, r, vol, q)
+    payoff_vals = np.maximum(K - S_range, 0)
+delta_vals = delta(S_range, K, T, r, vol, q)[index]
+gamma_vals = gamma(S_range, K, T, r, vol, q)
+vega_vals = vega(S_range, K, T, r, vol, q)
+theta_vals = theta(S_range, K, T, r, vol, q)[index]
+rho_vals = rho(S_range, K, T, r, vol, q)[index]
 
 fig = plt.figure(figsize=(14, 10), constrained_layout=True)
 gs = GridSpec(3, 4, figure=fig)
@@ -86,7 +88,7 @@ ax_key.text(0.05, 0.75, f"ATM Delta = {delta_atm:.4f}", fontsize=13, transform=a
 ax_key.text(0.05, 0.65, "Gamma  (∂²V/∂S²)", fontsize=15, fontweight='bold', transform=ax_key.transAxes)
 ax_key.text(0.05, 0.60, f"ATM Gamma = {gamma_atm:.4f}", fontsize=13, transform=ax_key.transAxes)
 
-ax_key.text(0.05, 0.50, "Theta  (∂V/∂T)", fontsize=15, fontweight='bold', transform=ax_key.transAxes)
+ax_key.text(0.05, 0.50, "Theta  (-∂V/∂T)", fontsize=15, fontweight='bold', transform=ax_key.transAxes)
 ax_key.text(0.05, 0.45, f"ATM Theta = {theta_atm:.4f}", fontsize=13, transform=ax_key.transAxes)
 
 ax_key.text(0.05, 0.35, "Vega  (∂V/∂σ)", fontsize=15, fontweight='bold', transform=ax_key.transAxes)
@@ -97,16 +99,11 @@ ax_key.text(0.05, 0.15, f"ATM Rho = {rho_atm:.4f}", fontsize=13, transform=ax_ke
 
 st.pyplot(fig)
 
-st.subheader(f"Volatility Smile — {symbol} {expiry} ({option_type})")
+st.subheader(f"Volatility Smile — {symbol} {expiry}")
 
-if option_type == "Call":
-    smile_strikes = np.array(list(clean_call_data.keys()))
-    smile_ivs = np.array(list(clean_call_data.values()))
-else:
-    smile_strikes = np.array(list(clean_put_data.keys()))
-    smile_ivs = np.array(list(clean_put_data.values()))
+smile_strikes = np.array(list(clean_iv_data.keys()))
+smile_ivs = np.array(list(clean_iv_data.values()))
 
-smile = call_smile if option_type == "Call" else put_smile
 K_dense = np.linspace(smile_strikes.min(), smile_strikes.max(), 200)
 iv_dense = smile(K_dense)
 
@@ -119,9 +116,9 @@ ax2.set_title(f"{symbol} Vol Smile — {expiry}")
 
 st.pyplot(fig2)
 
-st.subheader(f"Volatility Surface — {symbol} ({option_type})")
+st.subheader(f"Volatility Surface — {symbol}")
 
-surface_df = build_vol_surface(symbol, r, option_type)
+surface_df = build_vol_surface(symbol, r, q=q)
 
 fig3 = plt.figure(figsize=(10, 8))
 ax3 = fig3.add_subplot(projection='3d')

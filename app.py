@@ -66,40 +66,44 @@ def add_panel(gs_slice, data, title):
     ax = fig.add_subplot(gs_slice)
     ax.plot(S_range, data)
     ax.set_title(title)
-    ax.axvline(K, linestyle='--', color='gray', alpha=0.6)
+    ax.axvline(K, linestyle='--', color='gray', alpha=0.6, label=f"K = {K:.2f}")
+    ax.axvline(S, linestyle='-', color='tab:orange', alpha=0.6, label=f"Spot = {S:.2f}")
     return ax
 
 ax_price = add_panel(gs[0:2, 1:3], price_vals, "Price")
 ax_delta = add_panel(gs[0, 3], delta_vals, "Delta")
-delta_atm = delta(K, K, T, r, vol, q)[index]
+delta_spot = delta(S, K, T, r, vol, q)[index]
 ax_gamma = add_panel(gs[1, 3], gamma_vals, "Gamma")
-gamma_atm = gamma(K, K, T, r, vol, q)
+gamma_spot = gamma(S, K, T, r, vol, q)
 ax_theta = add_panel(gs[2, 0], theta_vals, "Theta")
-theta_atm = theta(K, K, T, r, vol, q)[index]
+theta_spot = theta(S, K, T, r, vol, q)[index]
 ax_vega = add_panel(gs[2, 1], vega_vals, "Vega")
-vega_atm = vega(K, K, T, r, vol, q)
+vega_spot = vega(S, K, T, r, vol, q)
 ax_rho = add_panel(gs[2, 2], rho_vals, "Rho")
-rho_atm = rho(K, K, T, r, vol, q)[index]
+rho_spot = rho(S, K, T, r, vol, q)[index]
 ax_payoff = add_panel(gs[2, 3], payoff_vals, "Payoff")
 
 ax_key = fig.add_subplot(gs[0:2, 0])
 ax_key.axis('off')
-ax_key.text(0.05, 0.95, "Greeks at S = K", fontsize=18, fontweight='bold', transform=ax_key.transAxes)
+ax_key.text(0.05, 0.96, f"Spot = {S:.2f}", fontsize=14, fontweight='bold', color='tab:orange', transform=ax_key.transAxes)
+ax_key.text(0.05, 0.91, f"Strike = {K:.2f}", fontsize=14, fontweight='bold', color='gray', transform=ax_key.transAxes)
 
-ax_key.text(0.05, 0.80, "Delta  (∂V/∂S)", fontsize=15, fontweight='bold', transform=ax_key.transAxes)
-ax_key.text(0.05, 0.75, f"ATM Delta = {delta_atm:.4f}", fontsize=13, transform=ax_key.transAxes)
+ax_key.text(0.05, 0.79, "Greeks at spot price:", fontsize=18, fontweight='bold', transform=ax_key.transAxes)
 
-ax_key.text(0.05, 0.65, "Gamma  (∂²V/∂S²)", fontsize=15, fontweight='bold', transform=ax_key.transAxes)
-ax_key.text(0.05, 0.60, f"ATM Gamma = {gamma_atm:.4f}", fontsize=13, transform=ax_key.transAxes)
+ax_key.text(0.05, 0.70, "Delta  (∂V/∂S)", fontsize=15, fontweight='bold', transform=ax_key.transAxes)
+ax_key.text(0.05, 0.65, f"Delta = {delta_spot:.4f}", fontsize=13, transform=ax_key.transAxes)
 
-ax_key.text(0.05, 0.50, "Theta  (-∂V/∂T)", fontsize=15, fontweight='bold', transform=ax_key.transAxes)
-ax_key.text(0.05, 0.45, f"ATM Theta = {theta_atm:.4f}", fontsize=13, transform=ax_key.transAxes)
+ax_key.text(0.05, 0.56, "Gamma  (∂²V/∂S²)", fontsize=15, fontweight='bold', transform=ax_key.transAxes)
+ax_key.text(0.05, 0.51, f"Gamma = {gamma_spot:.4f}", fontsize=13, transform=ax_key.transAxes)
 
-ax_key.text(0.05, 0.35, "Vega  (∂V/∂σ)", fontsize=15, fontweight='bold', transform=ax_key.transAxes)
-ax_key.text(0.05, 0.30, f"ATM Vega = {vega_atm:.4f}", fontsize=13, transform=ax_key.transAxes)
+ax_key.text(0.05, 0.42, "Theta  (-∂V/∂T)", fontsize=15, fontweight='bold', transform=ax_key.transAxes)
+ax_key.text(0.05, 0.37, f"Theta = {theta_spot:.4f}", fontsize=13, transform=ax_key.transAxes)
 
-ax_key.text(0.05, 0.20, "Rho  (∂V/∂r)", fontsize=15, fontweight='bold', transform=ax_key.transAxes)
-ax_key.text(0.05, 0.15, f"ATM Rho = {rho_atm:.4f}", fontsize=13, transform=ax_key.transAxes)
+ax_key.text(0.05, 0.28, "Vega  (∂V/∂σ)", fontsize=15, fontweight='bold', transform=ax_key.transAxes)
+ax_key.text(0.05, 0.23, f"Vega = {vega_spot:.4f}", fontsize=13, transform=ax_key.transAxes)
+
+ax_key.text(0.05, 0.14, "Rho  (∂V/∂r)", fontsize=15, fontweight='bold', transform=ax_key.transAxes)
+ax_key.text(0.05, 0.09, f"Rho = {rho_spot:.4f}", fontsize=13, transform=ax_key.transAxes)
 
 st.pyplot(fig)
 

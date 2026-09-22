@@ -61,6 +61,8 @@ def solve_iv_smile(calls, puts, S, T, r, vol_0=0.2, q=0.0):
         mid_data[K] = P_mkt
 
     solved = {K: iv for K, iv in iv_data.items() if not np.isnan(iv)}
+    if not solved:
+        raise ValueError("yfinance error")
     K_atm = min(solved, key=lambda K: abs(K - S))
     iv_atm = solved[K_atm]
     z = 3.0

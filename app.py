@@ -18,7 +18,11 @@ expiry = st.sidebar.select_slider("Expiry date", options=expiries, value=expirie
 
 option_type = st.sidebar.radio("Option type", ["Call", "Put"])
 calls, puts, S, T = get_option_chain(symbol, expiry)
-clean_iv_data, clean_mid_data = solve_iv_smile(calls, puts, S, T, r, q=q)
+try:
+    clean_iv_data, clean_mid_data = solve_iv_smile(calls, puts, S, T, r, q=q)
+except:
+    st.error("No strikes had valid bid/ask data, likely a yfinance data outage")
+    st.stop()
 if len(clean_iv_data) < 8:
     st.error("Not enough liquid strikes to build a smile for this selection.")
     st.stop()
